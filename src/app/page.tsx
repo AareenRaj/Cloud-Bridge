@@ -2,11 +2,7 @@ import Link from "next/link";
 export default function Home() {
   return (
     <main className="min-h-screen bg-slate-950 text-white">
-      <nav className="border-b border-slate-800 px-6 py-5">
-        <div className="mx-auto max-w-6xl text-2xl font-bold">
-          Cloud<span className="text-teal-400">Bridge</span>
-        </div>
-      </nav>
+
 
       <section className="mx-auto max-w-4xl px-6 py-24 text-center">
         <p className="mb-5 font-semibold text-teal-400">
