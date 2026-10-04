@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { experts } from "@/data/experts";
+import { connection } from "next/server";
+import { getAllExperts } from "@/lib/experts";
 import Badge from "@/components/Badge";
 import Card from "@/components/Card";
 
@@ -9,7 +10,9 @@ export default async function ExpertProfile({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await connection();
   const { id } = await params;
+  const experts = await getAllExperts();
   const expert = experts.find((item) => String(item.id) === id);
 
   if (!expert) {
@@ -29,7 +32,9 @@ export default async function ExpertProfile({
           <p className="text-slate-400">{expert.title}</p>
 
           <p className="mt-3 text-sm text-amber-300">
-            Demo profile — not a real expert listing.
+            {expert.isSample
+              ? "Demo profile — not a real expert listing."
+              : "Member profile — details are self-reported and not verified yet."}
           </p>
 
           <dl className="mt-6 grid gap-4 sm:grid-cols-3">
@@ -39,18 +44,22 @@ export default async function ExpertProfile({
                 ₹{expert.hourlyRate.toLocaleString("en-IN")}/hour
               </dd>
             </div>
-            <div>
-              <dt className="text-sm text-slate-400">Availability</dt>
-              <dd className="font-semibold">{expert.availability}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-slate-400">Savings delivered</dt>
-              <dd className="font-semibold">{expert.savingsDelivered}</dd>
-            </div>
+            {expert.availability && (
+              <div>
+                <dt className="text-sm text-slate-400">Availability</dt>
+                <dd className="font-semibold">{expert.availability}</dd>
+              </div>
+            )}
+            {expert.savingsDelivered && (
+              <div>
+                <dt className="text-sm text-slate-400">Savings delivered</dt>
+                <dd className="font-semibold">{expert.savingsDelivered}</dd>
+              </div>
+            )}
           </dl>
 
           <h2 className="mt-8 text-xl font-semibold">About</h2>
-          <p className="mt-3 text-slate-300">{expert.bio}</p>
+          <p className="mt-3 whitespace-pre-line text-slate-300">{expert.bio}</p>
 
           <h2 className="mt-8 text-xl font-semibold">Skills</h2>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -64,12 +73,16 @@ export default async function ExpertProfile({
             ))}
           </div>
 
-          <h2 className="mt-8 text-xl font-semibold">Certifications</h2>
-          <ul className="mt-3 list-disc pl-5 text-slate-300">
-            {expert.certifications.map((cert) => (
-              <li key={cert}>{cert}</li>
-            ))}
-          </ul>
+          {expert.certifications && expert.certifications.length > 0 && (
+            <>
+              <h2 className="mt-8 text-xl font-semibold">Certifications</h2>
+              <ul className="mt-3 list-disc pl-5 text-slate-300">
+                {expert.certifications.map((cert) => (
+                  <li key={cert}>{cert}</li>
+                ))}
+              </ul>
+            </>
+          )}
         </Card>
       </div>
     </main>
