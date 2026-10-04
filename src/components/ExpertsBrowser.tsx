@@ -39,7 +39,7 @@ export default function ExpertsBrowser({ experts }: { experts: Expert[] }) {
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-12 text-white">
       <div className="mx-auto max-w-6xl">
-        <Link href="/" className="text-teal-400 hover:underline">
+        <Link href="/" className="px-2 py-2 text-sm text-teal-400 hover:underline">
           ← Back to home
         </Link>
 
@@ -113,19 +113,19 @@ export default function ExpertsBrowser({ experts }: { experts: Expert[] }) {
             <button
               type="button"
               onClick={clearFilters}
-              className="text-sm text-teal-400 hover:underline"
+              className="px-2 py-2 text-sm text-teal-400 hover:underline"
             >
               Clear filters
             </button>
           )}
         </div>
 
-        <div className="mt-8 grid gap-6 md:grid-cols-3">
+        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filteredExperts.map((expert) => (
             <Card key={expert.id}>
               <Badge>{expert.platform}</Badge>
               <h2 className="mt-4 text-xl font-bold">{expert.name}</h2>
-              <p className="text-sm text-slate-400">{expert.title}</p>
+              <p className="ext-sm text-slate-400t">{expert.title}</p>
               <p className="mt-1 text-xs uppercase tracking-wide text-slate-500">
                 {expert.isSample ? "Sample profile" : "Member"}
               </p>

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Nav from "@/components/Nav";
@@ -20,6 +20,12 @@ export const metadata: Metadata = {
     "Connect venture-backed scaleups with engineers who specialize in reducing AWS and Google Cloud bills.",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#020617",
+};
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -30,7 +36,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Nav />
         <div className="flex-1">{children}</div>
         <Footer />
-        </body>
+      </body>
     </html>
   );
 }

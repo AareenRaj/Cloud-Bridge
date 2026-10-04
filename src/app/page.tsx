@@ -7,7 +7,7 @@ import Card from "@/components/Card";
 export default function Home() {
   return (
     <main className="min-h-screen bg-slate-950 text-white">
-      <section className="mx-auto max-w-4xl px-6 py-24 text-center">
+      <section className="mx-auto max-w-4xl px-6 py-14 text-center sm:py-24">
         <p className="mb-5 font-semibold text-teal-400">
           CLOUD FINOPS FOR SCALEUPS
         </p>
