@@ -5,19 +5,14 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import Card from "@/components/Card";
 import FormField, { inputStyle } from "@/components/FormField";
+import { submitExpert } from "@/app/actions";
+import {
+  validateExpert,
+  type ExpertErrors,
+  type ExpertValues,
+} from "@/lib/validation";
 
-type Values = {
-  name: string;
-  email: string;
-  title: string;
-  platform: string;
-  skills: string;
-  rate: string;
-  bio: string;
-};
-type Errors = Partial<Record<keyof Values, string>>;
-
-const empty: Values = {
+const empty: ExpertValues = {
   name: "",
   email: "",
   title: "",
@@ -27,35 +22,42 @@ const empty: Values = {
   bio: "",
 };
 
-function validate(v: Values): Errors {
-  const errors: Errors = {};
-  if (!v.name.trim()) errors.name = "Enter your full name.";
-  if (!/^\S+@\S+\.\S+$/.test(v.email)) errors.email = "Enter a valid email.";
-  if (!v.title.trim()) errors.title = "Enter your professional title.";
-  const skills = v.skills.split(",").map((s) => s.trim()).filter(Boolean);
-  if (skills.length === 0) errors.skills = "List at least one skill, separated by commas.";
-  if (!v.rate || Number(v.rate) <= 0) errors.rate = "Enter your hourly rate in rupees.";
-  if (v.bio.trim().length < 30) errors.bio = "Write at least 30 characters about your experience.";
-  return errors;
-}
-
 export default function JoinExpertPage() {
-  const [values, setValues] = useState<Values>(empty);
-  const [errors, setErrors] = useState<Errors>({});
+  const [values, setValues] = useState<ExpertValues>(empty);
+  const [errors, setErrors] = useState<ExpertErrors>({});
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [serverMessage, setServerMessage] = useState("");
 
-  function update(field: keyof Values, value: string) {
+  function update(field: keyof ExpertValues, value: string) {
     setValues((prev) => ({ ...prev, [field]: value }));
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const found = validate(values);
+    setServerMessage("");
+
+    const found = validateExpert(values);
     setErrors(found);
-    if (Object.keys(found).length === 0) setSubmitted(true);
+    if (Object.keys(found).length > 0) return;
+
+    setSubmitting(true);
+    try {
+      const result = await submitExpert(values);
+      if (result.ok) {
+        setSubmitted(true);
+      } else {
+        setErrors(result.errors ?? {});
+        setServerMessage(result.message ?? "");
+      }
+    } catch {
+      setServerMessage("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  function props(field: keyof Values) {
+  function props(field: keyof ExpertValues) {
     return {
       id: field,
       value: values[field],
@@ -72,10 +74,10 @@ export default function JoinExpertPage() {
           <Card className="p-8">
             <h1 className="text-3xl font-bold">Application received</h1>
             <p className="mt-4 text-slate-300">
-              Thanks, {values.name}. We would review your profile and write to {values.email}.
+              Thanks, {values.name}. Your application was saved.
             </p>
             <p className="mt-3 text-sm text-amber-300">
-              Demo only: nothing was saved yet.
+              Demo site: no one will review it yet.
             </p>
             <Link href="/projects" className="mt-6 inline-block text-teal-400 hover:underline">
               Browse projects →
@@ -110,7 +112,7 @@ export default function JoinExpertPage() {
             <input {...props("title")} onChange={(e) => update("title", e.target.value)} />
           </FormField>
 
-          <FormField id="platform" label="Main cloud platform">
+          <FormField id="platform" label="Main cloud platform" error={errors.platform}>
             <select {...props("platform")} onChange={(e) => update("platform", e.target.value)}>
               <option>AWS</option>
               <option>Google Cloud</option>
@@ -130,11 +132,18 @@ export default function JoinExpertPage() {
             <textarea rows={5} {...props("bio")} onChange={(e) => update("bio", e.target.value)} />
           </FormField>
 
+          {serverMessage && (
+            <p role="alert" className="text-sm text-red-400">
+              {serverMessage}
+            </p>
+          )}
+
           <button
             type="submit"
-            className="rounded-xl bg-brand px-6 py-3 font-semibold text-canvas hover:bg-brand-hover"
+            disabled={submitting}
+            className="rounded-xl bg-brand px-6 py-3 font-semibold text-canvas hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Submit application
+            {submitting ? "Submitting..." : "Submit application"}
           </button>
         </form>
       </div>

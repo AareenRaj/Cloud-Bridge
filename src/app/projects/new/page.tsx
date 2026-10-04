@@ -5,19 +5,14 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import Card from "@/components/Card";
 import FormField, { inputStyle } from "@/components/FormField";
+import { submitProject } from "@/app/actions";
+import {
+  validateProject,
+  type ProjectErrors,
+  type ProjectValues,
+} from "@/lib/validation";
 
-type Values = {
-  company: string;
-  email: string;
-  title: string;
-  platform: string;
-  budgetMin: string;
-  budgetMax: string;
-  description: string;
-};
-type Errors = Partial<Record<keyof Values, string>>;
-
-const empty: Values = {
+const empty: ProjectValues = {
   company: "",
   email: "",
   title: "",
@@ -27,38 +22,42 @@ const empty: Values = {
   description: "",
 };
 
-function validate(v: Values): Errors {
-  const errors: Errors = {};
-  if (!v.company.trim()) errors.company = "Enter your company name.";
-  if (!/^\S+@\S+\.\S+$/.test(v.email)) errors.email = "Enter a valid work email.";
-  if (v.title.trim().length < 8) errors.title = "Give the project a title of at least 8 characters.";
-  const min = Number(v.budgetMin);
-  const max = Number(v.budgetMax);
-  if (!v.budgetMin || min <= 0) errors.budgetMin = "Enter a minimum budget in rupees.";
-  if (!v.budgetMax || max <= 0) errors.budgetMax = "Enter a maximum budget in rupees.";
-  else if (min > max) errors.budgetMax = "Maximum must be at least the minimum.";
-  if (v.description.trim().length < 30)
-    errors.description = "Describe the work in at least 30 characters.";
-  return errors;
-}
-
 export default function NewProjectPage() {
-  const [values, setValues] = useState<Values>(empty);
-  const [errors, setErrors] = useState<Errors>({});
+  const [values, setValues] = useState<ProjectValues>(empty);
+  const [errors, setErrors] = useState<ProjectErrors>({});
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [serverMessage, setServerMessage] = useState("");
 
-  function update(field: keyof Values, value: string) {
+  function update(field: keyof ProjectValues, value: string) {
     setValues((prev) => ({ ...prev, [field]: value }));
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const found = validate(values);
+    setServerMessage("");
+
+    const found = validateProject(values);
     setErrors(found);
-    if (Object.keys(found).length === 0) setSubmitted(true);
+    if (Object.keys(found).length > 0) return;
+
+    setSubmitting(true);
+    try {
+      const result = await submitProject(values);
+      if (result.ok) {
+        setSubmitted(true);
+      } else {
+        setErrors(result.errors ?? {});
+        setServerMessage(result.message ?? "");
+      }
+    } catch {
+      setServerMessage("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  function props(field: keyof Values) {
+  function props(field: keyof ProjectValues) {
     return {
       id: field,
       value: values[field],
@@ -75,10 +74,10 @@ export default function NewProjectPage() {
           <Card className="p-8">
             <h1 className="text-3xl font-bold">Project received</h1>
             <p className="mt-4 text-slate-300">
-              Thanks, {values.company}. Matching experts would contact {values.email}.
+              Thanks, {values.company}. Your project was saved.
             </p>
             <p className="mt-3 text-sm text-amber-300">
-              Demo only: nothing was saved yet.
+              Demo site: no experts will contact you yet.
             </p>
             <Link href="/experts" className="mt-6 inline-block text-teal-400 hover:underline">
               Browse experts →
@@ -113,7 +112,7 @@ export default function NewProjectPage() {
             <input {...props("title")} onChange={(e) => update("title", e.target.value)} />
           </FormField>
 
-          <FormField id="platform" label="Cloud platform">
+          <FormField id="platform" label="Cloud platform" error={errors.platform}>
             <select {...props("platform")} onChange={(e) => update("platform", e.target.value)}>
               <option>AWS</option>
               <option>Google Cloud</option>
@@ -134,11 +133,18 @@ export default function NewProjectPage() {
             <textarea rows={5} {...props("description")} onChange={(e) => update("description", e.target.value)} />
           </FormField>
 
+          {serverMessage && (
+            <p role="alert" className="text-sm text-red-400">
+              {serverMessage}
+            </p>
+          )}
+
           <button
             type="submit"
-            className="rounded-xl bg-brand px-6 py-3 font-semibold text-canvas hover:bg-brand-hover"
+            disabled={submitting}
+            className="rounded-xl bg-brand px-6 py-3 font-semibold text-canvas hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Post project
+            {submitting ? "Posting..." : "Post project"}
           </button>
         </form>
       </div>
